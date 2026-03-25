@@ -1,0 +1,1902 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X & O - لعبة التعليمية</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --x-color: #3b82f6;
+        --x-dark: #1d4ed8;
+        --x-light: #93c5fd;
+        --o-color: #f97316;
+        --o-dark: #c2410c;
+        --o-light: #fdba74;
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card2: #0f172a;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --border: #334155;
+        --green: #22c55e;
+        --red: #ef4444;
+        --gold: #f59e0b;
+      }
+      body {
+        font-family: "Cairo", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        direction: rtl;
+      }
+      .screen {
+        display: none;
+        min-height: 100vh;
+        animation: fadeIn 0.5s ease;
+      }
+      .screen.active {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(-10px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+      @keyframes winGlow {
+        0%,
+        100% {
+          box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 60px rgba(245, 158, 11, 0.8),
+            0 0 100px rgba(245, 158, 11, 0.4);
+        }
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-8px);
+        }
+        75% {
+          transform: translateX(8px);
+        }
+      }
+      @keyframes flash-green {
+        0%,
+        100% {
+          background: var(--card);
+        }
+        50% {
+          background: rgba(34, 197, 94, 0.3);
+        }
+      }
+      @keyframes flash-red {
+        0%,
+        100% {
+          background: var(--card);
+        }
+        50% {
+          background: rgba(239, 68, 68, 0.3);
+        }
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      /* GEOMETRIC BACKGROUND */
+      .geo-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .geo-bg svg {
+        width: 100%;
+        height: 100%;
+        opacity: 0.04;
+      }
+
+      /* WELCOME SCREEN */
+      #welcome {
+        background: radial-gradient(
+          ellipse at center,
+          #1e3a5f 0%,
+          var(--bg) 70%
+        );
+      }
+      .logo-wrap {
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: float 3s ease-in-out infinite;
+      }
+      .logo-title {
+        font-size: clamp(2.5rem, 7vw, 5rem);
+        font-weight: 900;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.1;
+      }
+      .logo-sub {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
+      .x-symbol {
+        display: inline-block;
+        font-size: 3rem;
+        animation: pulse 2s infinite;
+      }
+      .o-symbol {
+        display: inline-block;
+        font-size: 3rem;
+        animation: pulse 2s infinite 0.5s;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--x-color), #8b5cf6);
+        color: #fff;
+        border: none;
+        padding: 1rem 2.5rem;
+        font-size: 1.2rem;
+        font-family: "Cairo", sans-serif;
+        font-weight: 700;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+      }
+      .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+      }
+
+      /* SETUP SCREEN */
+      #setup {
+        background: radial-gradient(ellipse at top, #1e3a5f 0%, var(--bg) 70%);
+        padding: 2rem;
+      }
+      .setup-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: slideIn 0.5s ease;
+      }
+      .setup-title {
+        text-align: center;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        color: var(--text);
+      }
+      .team-input {
+        margin-bottom: 1.5rem;
+      }
+      .team-input label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .team-input.x label {
+        color: var(--x-light);
+      }
+      .team-input.o label {
+        color: var(--o-light);
+      }
+      .team-input input {
+        width: 100%;
+        padding: 0.9rem 1.2rem;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Cairo", sans-serif;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        outline: none;
+      }
+      .team-input.x input:focus {
+        border-color: var(--x-color);
+      }
+      .team-input.o input:focus {
+        border-color: var(--o-color);
+      }
+
+      /* GAME SCREEN */
+      #game {
+        background: var(--bg);
+        padding: 1rem;
+        align-items: stretch;
+        justify-content: flex-start;
+        flex-direction: column;
+      }
+      .game-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1rem;
+        background: var(--card);
+        border-radius: 16px;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+      }
+      .team-score {
+        text-align: center;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        min-width: 120px;
+      }
+      .team-score.x {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2),
+          rgba(59, 130, 246, 0.05)
+        );
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .team-score.o {
+        background: linear-gradient(
+          135deg,
+          rgba(249, 115, 22, 0.2),
+          rgba(249, 115, 22, 0.05)
+        );
+        border: 1px solid rgba(249, 115, 22, 0.3);
+      }
+      .team-score .name {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+      }
+      .team-score.x .name {
+        color: var(--x-light);
+      }
+      .team-score.o .name {
+        color: var(--o-light);
+      }
+      .team-score .symbol {
+        font-size: 1.8rem;
+      }
+      .turn-indicator {
+        text-align: center;
+        flex: 1;
+        padding: 0 0.5rem;
+      }
+      .turn-indicator .label {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .turn-indicator .team-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+      .turn-indicator.x .team-name {
+        color: var(--x-color);
+      }
+      .turn-indicator.o .team-name {
+        color: var(--o-color);
+      }
+
+      .game-body {
+        display: flex;
+        gap: 1rem;
+        flex: 1;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      /* BOARD */
+      .board-wrap {
+        flex: 0 0 auto;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        width: min(280px, 40vw);
+      }
+      @media (max-width: 700px) {
+        .board {
+          width: min(300px, 90vw);
+        }
+        .game-body {
+          flex-direction: column-reverse;
+          align-items: center;
+        }
+      }
+      .cell {
+        aspect-ratio: 1;
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        cursor: default;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+      .cell.empty.selectable {
+        cursor: pointer;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .cell.empty.selectable:hover {
+        transform: scale(1.05);
+        border-color: var(--active-color, #fff);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .cell.x-cell {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.3),
+          rgba(59, 130, 246, 0.1)
+        );
+        border-color: var(--x-color);
+      }
+      .cell.o-cell {
+        background: linear-gradient(
+          135deg,
+          rgba(249, 115, 22, 0.3),
+          rgba(249, 115, 22, 0.1)
+        );
+        border-color: var(--o-color);
+      }
+      .cell.win-cell {
+        animation: winGlow 1s infinite;
+      }
+      .cell-symbol {
+        animation: slideIn 0.3s ease;
+      }
+
+      /* SUBJECTS */
+      .subjects-wrap {
+        flex: 1;
+        min-width: 200px;
+      }
+      .subjects-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 0.8rem;
+        text-align: center;
+      }
+      .subjects {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 0.6rem;
+      }
+      @media (min-width: 400px) {
+        .subjects {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .subject-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .subject-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .subject-card .icon {
+        font-size: 1.8rem;
+      }
+      .subject-card .name {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .subject-card.used {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      /* QUESTION SCREEN */
+      #question {
+        background: radial-gradient(
+          ellipse at center,
+          #1e3a5f 0%,
+          var(--bg) 70%
+        );
+        padding: 1.5rem;
+      }
+      .q-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 600px;
+        animation: slideIn 0.4s ease;
+      }
+      .q-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+      .q-subject {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 0.5rem;
+      }
+      .q-team {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+      }
+      .q-team.x {
+        color: var(--x-color);
+      }
+      .q-team.o {
+        color: var(--o-color);
+      }
+      .q-text {
+        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        font-weight: 600;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+      }
+      .answers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+      }
+      .answer-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        font-family: "Cairo", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: right;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .answer-btn .letter {
+        font-size: 1rem;
+        font-weight: 900;
+        color: var(--muted);
+        min-width: 24px;
+        text-align: center;
+      }
+      .answer-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: scale(1.02);
+      }
+      .answer-btn.correct {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: var(--green);
+        animation: flash-green 1s;
+      }
+      .answer-btn.wrong {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: var(--red);
+        animation: shake 0.5s;
+      }
+      .answer-btn:disabled {
+        cursor: not-allowed;
+      }
+
+      /* PLACE SYMBOL SCREEN */
+      #place {
+        background: var(--bg);
+        padding: 1.5rem;
+      }
+      .place-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+      .place-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--green);
+        margin-bottom: 0.5rem;
+      }
+      .place-sub {
+        font-size: 1rem;
+        color: var(--muted);
+      }
+      .place-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: min(320px, 80vw);
+        margin: 0 auto;
+      }
+      .place-cell {
+        aspect-ratio: 1;
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(2rem, 6vw, 3.5rem);
+        cursor: default;
+        transition: all 0.3s;
+      }
+      .place-cell.empty {
+        cursor: pointer;
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+      .place-cell.empty:hover {
+        transform: scale(1.08);
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      .place-cell.x-cell {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.3),
+          rgba(59, 130, 246, 0.1)
+        );
+        border-color: var(--x-color);
+      }
+      .place-cell.o-cell {
+        background: linear-gradient(
+          135deg,
+          rgba(249, 115, 22, 0.3),
+          rgba(249, 115, 22, 0.1)
+        );
+        border-color: var(--o-color);
+      }
+
+      /* WIN SCREEN */
+      #winscreen {
+        background: radial-gradient(
+          ellipse at center,
+          #1a1a2e 0%,
+          var(--bg) 70%
+        );
+        overflow: hidden;
+      }
+      .win-card {
+        text-align: center;
+        padding: 3rem 2rem;
+        animation: slideIn 0.6s ease;
+      }
+      .win-emoji {
+        font-size: 5rem;
+        animation: pulse 1s infinite;
+        display: block;
+        margin-bottom: 1rem;
+      }
+      .win-title {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+      }
+      .win-title.x {
+        background: linear-gradient(135deg, var(--x-color), var(--x-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .win-title.o {
+        background: linear-gradient(135deg, var(--o-color), var(--o-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .win-title.draw {
+        background: linear-gradient(135deg, var(--gold), #fde68a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .win-sub {
+        font-size: 1.2rem;
+        color: var(--muted);
+        margin-bottom: 2rem;
+      }
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 0.9rem 2rem;
+        font-size: 1rem;
+        font-family: "Cairo", sans-serif;
+        font-weight: 600;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 0.3rem;
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+      }
+
+      /* CONFETTI */
+      .confetti-piece {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        top: -10px;
+        pointer-events: none;
+        animation: confettiFall linear forwards;
+        border-radius: 2px;
+        z-index: 100;
+      }
+
+      /* FEEDBACK OVERLAY */
+      .feedback {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 50;
+        backdrop-filter: blur(4px);
+      }
+      .feedback.show {
+        display: flex;
+        animation: fadeIn 0.3s ease;
+      }
+      .feedback-card {
+        text-align: center;
+        padding: 2.5rem;
+        background: var(--card);
+        border-radius: 24px;
+        border: 2px solid;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: slideIn 0.4s ease;
+        max-width: 360px;
+        margin: 1rem;
+      }
+      .feedback-card.correct {
+        border-color: var(--green);
+      }
+      .feedback-card.wrong {
+        border-color: var(--red);
+      }
+      .feedback-icon {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 0.8rem;
+      }
+      .feedback-text {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+      .feedback-card.correct .feedback-text {
+        color: var(--green);
+      }
+      .feedback-card.wrong .feedback-text {
+        color: var(--red);
+      }
+      .feedback-sub {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      /* ADMIN SCREENS */
+      #admin-login, #admin-panel {
+        background: var(--bg);
+        justify-content: flex-start;
+        padding: 2rem;
+        overflow-y: auto;
+      }
+      .admin-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .admin-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gold);
+      }
+      .admin-input-group {
+        margin-bottom: 1rem;
+        flex: 1;
+      }
+      .admin-input-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--muted);
+      }
+      .admin-input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        font-family: inherit;
+      }
+      .admin-input:focus {
+        border-color: var(--x-color);
+        outline: none;
+      }
+      .admin-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .admin-btn.primary { background: var(--x-color); color: #fff; }
+      .admin-btn.primary:hover { background: var(--x-dark); }
+      .admin-btn.danger { background: var(--red); color: #fff; }
+      .admin-btn.danger:hover { background: #b91c1c; }
+      .admin-btn.secondary { background: var(--border); color: var(--text); }
+      .admin-btn.secondary:hover { background: #475569; }
+      .admin-layout {
+        display: flex;
+        gap: 2rem;
+      }
+      .admin-sidebar {
+        flex: 1;
+        min-width: 200px;
+        max-width: 250px;
+        border-left: 1px solid var(--border);
+        padding-left: 1rem;
+      }
+      .admin-main {
+        flex: 3;
+      }
+      .subject-item {
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .subject-item:hover { background: rgba(255, 255, 255, 0.05); }
+      .subject-item.active {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid var(--x-color);
+      }
+      .question-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .question-text { font-weight: 700; margin-bottom: 0.5rem; }
+      .question-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+      .q-opt { font-size: 0.9rem; color: var(--muted); padding: 0.3rem; border-radius: 4px; background: rgba(0,0,0,0.2); }
+      .q-opt.correct { color: var(--green); background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); }
+      @media (max-width: 768px) {
+        .admin-layout { flex-direction: column; }
+        .admin-sidebar { border-left: none; border-bottom: 1px solid var(--border); padding-left: 0; padding-bottom: 1rem; max-width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="geo-bg">
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern
+            id="geo"
+            x="0"
+            y="0"
+            width="80"
+            height="80"
+            patternUnits="userSpaceOnUse"
+          >
+            <polygon
+              points="40,5 75,25 75,55 40,75 5,55 5,25"
+              fill="none"
+              stroke="#fff"
+              stroke-width="1"
+            />
+            <polygon
+              points="40,20 60,30 60,50 40,60 20,50 20,30"
+              fill="none"
+              stroke="#fff"
+              stroke-width=".5"
+            />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#geo)" />
+      </svg>
+    </div>
+
+    <!-- WELCOME SCREEN -->
+    <div id="welcome" class="screen active">
+      <div class="logo-wrap">
+        <span class="x-symbol">❌</span>
+        <span style="font-size: 2rem; margin: 0 1rem; color: var(--muted)"
+          >🆚</span
+        >
+        <span class="o-symbol">⭕</span>
+        <div class="logo-title">لعبة X & O<br />التعليمية</div>
+        <div class="logo-sub">أجب عن السؤال واستحق وضع رمزك على اللوحة!</div>
+      </div>
+      <div
+        style="
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-bottom: 2rem;
+        "
+      >
+        <div
+          style="
+            text-align: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+          "
+        >
+          <div style="font-size: 1.5rem">🕌</div>
+          <div style="font-size: 0.8rem; color: var(--muted)">ديني</div>
+        </div>
+        <div
+          style="
+            text-align: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 12px;
+          "
+        >
+          <div style="font-size: 1.5rem">📖</div>
+          <div style="font-size: 0.8rem; color: var(--muted)">قرآني</div>
+        </div>
+        <div
+          style="
+            text-align: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 12px;
+          "
+        >
+          <div style="font-size: 1.5rem">🌙</div>
+          <div style="font-size: 0.8rem; color: var(--muted)">سيرة</div>
+        </div>
+        <div
+          style="
+            text-align: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+          "
+        >
+          <div style="font-size: 1.5rem">🔬</div>
+          <div style="font-size: 0.8rem; color: var(--muted)">علوم</div>
+        </div>
+        <div
+          style="
+            text-align: center;
+            padding: 0.8rem 1.2rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+          "
+        >
+          <div style="font-size: 1.5rem">➗</div>
+          <div style="font-size: 0.8rem; color: var(--muted)">رياضيات</div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="showScreen('setup')">
+        ابدأ اللعبة 🚀
+      </button>
+      <button onclick="showScreen('admin-login')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; opacity: 0.5" title="لوحة التحكم">⚙️</button>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup" class="screen">
+      <div class="setup-card">
+        <div class="setup-title">👥 أدخل أسماء الفريقين</div>
+        <div class="team-input x">
+          <label>❌ الفريق X</label>
+          <input
+            id="nameX"
+            type="text"
+            placeholder="اسم الفريق الأول"
+            maxlength="20"
+            value="الفريق الأزرق"
+          />
+        </div>
+        <div class="team-input o">
+          <label>⭕ الفريق O</label>
+          <input
+            id="nameO"
+            type="text"
+            placeholder="اسم الفريق الثاني"
+            maxlength="20"
+            value="الفريق البرتقالي"
+          />
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <button
+            class="btn-secondary"
+            onclick="showScreen('welcome')"
+            style="flex: 1"
+          >
+            رجوع
+          </button>
+          <button class="btn-primary" onclick="startGame()" style="flex: 2">
+            ابدأ ✨
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game" class="screen" style="justify-content: flex-start">
+      <div class="game-header">
+        <div class="team-score x">
+          <div class="name" id="scoreNameX">الفريق X</div>
+          <div class="symbol">❌</div>
+        </div>
+        <div class="turn-indicator" id="turnIndicator">
+          <div class="label">دور</div>
+          <div class="team-name" id="turnName">-</div>
+        </div>
+        <div class="team-score o">
+          <div class="name" id="scoreNameO">الفريق O</div>
+          <div class="symbol">⭕</div>
+        </div>
+      </div>
+      <div class="game-body">
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+        </div>
+        <div class="subjects-wrap">
+          <div class="subjects-title">اختر موضوعاً للإجابة</div>
+          <div class="subjects" id="subjects"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION SCREEN -->
+    <div id="question" class="screen">
+      <div class="q-card">
+        <div class="q-header">
+          <div class="q-subject" id="qSubject"></div>
+          <div class="q-team" id="qTeam"></div>
+        </div>
+        <div class="q-text" id="qText"></div>
+        <div class="answers" id="answers"></div>
+      </div>
+    </div>
+
+    <!-- PLACE SYMBOL SCREEN -->
+    <div id="place" class="screen">
+      <div class="place-header">
+        <div class="place-title">✅ إجابة صحيحة!</div>
+        <div class="place-sub" id="placeSub">اختر خانة لوضع رمزك</div>
+      </div>
+      <div class="place-board" id="placeBoard"></div>
+      <div style="margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem">
+        انقر على خانة فارغة لوضع رمزك
+      </div>
+    </div>
+
+    <!-- WIN SCREEN -->
+    <div id="winscreen" class="screen">
+      <div class="win-card">
+        <span class="win-emoji" id="winEmoji">🏆</span>
+        <div class="win-title" id="winTitle"></div>
+        <div class="win-sub" id="winSub"></div>
+        <div style="margin-top: 2rem">
+          <button class="btn-secondary" onclick="startGame()">
+            🔄 لعبة جديدة
+          </button>
+          <button class="btn-secondary" onclick="showScreen('setup')">
+            ⚙️ تغيير الأسماء
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div id="admin-login" class="screen">
+      <div class="admin-card" style="max-width: 400px; text-align: center;">
+        <div class="admin-title" style="margin-bottom: 1.5rem;">🔒 تسجيل الدخول للوحة التحكم</div>
+        <div class="admin-input-group">
+          <input type="password" id="adminPassword" class="admin-input" placeholder="كلمة المرور" onkeypress="if(event.key==='Enter') adminLogin()" />
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button class="admin-btn secondary" onclick="showScreen('welcome')" style="flex: 1;">رجوع</button>
+          <button class="admin-btn primary" onclick="adminLogin()" style="flex: 1;">دخول</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="screen">
+      <div class="admin-card">
+        <div class="admin-header">
+          <div class="admin-title">⚙️ إدارة الأسئلة والمواضيع</div>
+          <div style="display: flex; gap: 0.5rem">
+            <button class="admin-btn primary" onclick="saveAdminChanges()">💾 حفظ التغييرات</button>
+            <button class="admin-btn secondary" onclick="cancelAdminChanges()">إغلاق</button>
+          </div>
+        </div>
+        <div class="admin-layout">
+          <div class="admin-sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; color: var(--muted);">المواضيع</h3>
+            </div>
+            <div id="adminSubjectsList"></div>
+            <button class="admin-btn secondary" style="margin-top: 1rem; width: 100%;" onclick="adminAddSubject()">+ إضافة موضوع</button>
+          </div>
+          <div class="admin-main">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; color: var(--muted);" id="adminCurrentSubjectTitle">الأسئلة</h3>
+              <button class="admin-btn primary" id="adminAddQuestionBtn" onclick="adminAddQuestion()" style="display: none;">+ إضافة سؤال</button>
+            </div>
+            <div id="adminQuestionsList">
+              <div style="color: var(--muted); text-align: center; padding: 2rem;">اختر موضوعاً لعرض الأسئلة</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN QUESTION MODAL -->
+    <div id="admin-q-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; align-items:center; justify-content:center; flex-direction: column;">
+      <div class="admin-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="admin-title" id="adminQModalTitle" style="margin-bottom: 1rem;">إضافة/تعديل سؤال</div>
+        <input type="hidden" id="adminQModalIndex" value="-1" />
+        <div class="admin-input-group">
+          <label>نص السؤال</label>
+          <textarea id="adminQText" class="admin-input" rows="3"></textarea>
+        </div>
+        <div class="admin-input-group">
+          <label>الخيارات (حدد الخيار الصحيح للمربع الجانبي)</label>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items: center;">
+            <input type="radio" name="adminQCorrect" value="0" checked>
+            <input type="text" id="adminQOpt0" class="admin-input" placeholder="الخيار الأول">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items: center;">
+            <input type="radio" name="adminQCorrect" value="1">
+            <input type="text" id="adminQOpt1" class="admin-input" placeholder="الخيار الثاني">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items: center;">
+            <input type="radio" name="adminQCorrect" value="2">
+            <input type="text" id="adminQOpt2" class="admin-input" placeholder="الخيار الثالث">
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items: center;">
+            <input type="radio" name="adminQCorrect" value="3">
+            <input type="text" id="adminQOpt3" class="admin-input" placeholder="الخيار الرابع">
+          </div>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+          <button class="admin-btn secondary" onclick="closeAdminQModal()">إلغاء</button>
+          <button class="admin-btn primary" onclick="saveAdminQModal()">حفظ السؤال</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div class="feedback" id="feedback">
+      <div class="feedback-card" id="feedbackCard">
+        <span class="feedback-icon" id="feedbackIcon"></span>
+        <div class="feedback-text" id="feedbackText"></div>
+        <div class="feedback-sub" id="feedbackSub"></div>
+      </div>
+    </div>
+
+    <script>
+      // ==================== DATA ====================
+      const DEFAULT_QUESTIONS = {
+        ديني: [
+          { q: "كم عدد أركان الإسلام؟", a: ["٤", "٥", "٦", "٣"], c: 1 },
+          {
+            q: "ما أول ركن من أركان الإسلام؟",
+            a: ["الصلاة", "الزكاة", "الشهادتان", "الصوم"],
+            c: 2,
+          },
+          { q: "كم عدد أركان الإيمان؟", a: ["٥", "٧", "٦", "٤"], c: 2 },
+          {
+            q: "ما الصلاة التي لا جهر فيها؟",
+            a: ["المغرب", "العشاء", "الظهر", "الفجر"],
+            c: 2,
+          },
+          { q: "كم عدد ركعات صلاة الفجر؟", a: ["٣", "٤", "٢", "١"], c: 2 },
+          {
+            q: "ما نصاب زكاة الذهب؟",
+            a: ["٨٥ جراماً", "٧٠ جراماً", "١٠٠ جراماً", "٥٠ جراماً"],
+            c: 0,
+          },
+          {
+            q: "ما الحج المقرون بالعمرة؟",
+            a: ["الإفراد", "التمتع", "القران", "المفرد"],
+            c: 2,
+          },
+          { q: "كم عدد تكبيرات صلاة الجنازة؟", a: ["٣", "٥", "٤", "٦"], c: 2 },
+          {
+            q: "ما الذي يُبطل الوضوء؟",
+            a: ["النوم جالساً", "الأكل", "خروج الريح", "الضحك"],
+            c: 2,
+          },
+          {
+            q: "كم مرة تُصلى صلاة الجمعة؟",
+            a: ["مرتان", "ثلاث", "مرة واحدة", "أربع"],
+            c: 2,
+          },
+        ],
+        قرآني: [
+          {
+            q: "كم عدد سور القرآن الكريم؟",
+            a: ["١١٠", "١١٤", "١٢٠", "١٠٠"],
+            c: 1,
+          },
+          {
+            q: "ما أطول سورة في القرآن؟",
+            a: ["آل عمران", "النساء", "البقرة", "المائدة"],
+            c: 2,
+          },
+          {
+            q: "ما أقصر سورة في القرآن؟",
+            a: ["الإخلاص", "الكوثر", "الفلق", "الناس"],
+            c: 1,
+          },
+          {
+            q: "كم عدد أجزاء القرآن الكريم؟",
+            a: ["٢٥", "٢٠", "٣٠", "٢٨"],
+            c: 2,
+          },
+          {
+            q: "ما أول سورة نزلت؟",
+            a: ["الفاتحة", "البقرة", "العلق", "المدثر"],
+            c: 2,
+          },
+          { q: "كم عدد آيات سورة الفاتحة؟", a: ["٦", "٨", "٧", "٥"], c: 2 },
+          {
+            q: "ما السورة التي تعدل ثلث القرآن؟",
+            a: ["الفلق", "الكافرون", "الإخلاص", "الناس"],
+            c: 2,
+          },
+          {
+            q: "في أي سورة آية الكرسي؟",
+            a: ["آل عمران", "النساء", "البقرة", "المائدة"],
+            c: 2,
+          },
+          {
+            q: "كم عدد الحروف المقطعة في بداية السور؟",
+            a: ["١٢", "١٤", "١٦", "١٠"],
+            c: 1,
+          },
+          {
+            q: "ما السورة التي ليس فيها بسملة؟",
+            a: ["الأنفال", "التوبة", "الحجر", "النمل"],
+            c: 1,
+          },
+        ],
+        سيرة: [
+          {
+            q: "في أي عام وُلد النبي ﷺ؟",
+            a: ["٥٧١م", "٥٧٠م", "٥٨٠م", "٥٦٠م"],
+            c: 0,
+          },
+          {
+            q: "ما اسم والد النبي ﷺ؟",
+            a: ["عبدالمطلب", "أبو طالب", "عبدالله", "الزبير"],
+            c: 2,
+          },
+          {
+            q: "ما اسم أم النبي ﷺ؟",
+            a: ["خديجة", "فاطمة", "آمنة", "سمية"],
+            c: 2,
+          },
+          { q: "كم عمر النبي ﷺ حين تُوفي؟", a: ["٦٠", "٦٥", "٦٣", "٧٠"], c: 2 },
+          {
+            q: "ما أول زوجات النبي ﷺ؟",
+            a: ["عائشة", "حفصة", "خديجة", "زينب"],
+            c: 2,
+          },
+          {
+            q: "في أي غزوة كُسرت رباعية النبي ﷺ؟",
+            a: ["بدر", "الخندق", "أحد", "حنين"],
+            c: 2,
+          },
+          { q: "كم عدد غزوات النبي ﷺ؟", a: ["٢٠", "٢٥", "٢٧", "٣٠"], c: 2 },
+          {
+            q: "ما أول مسجد بُني في الإسلام؟",
+            a: ["المسجد الحرام", "المسجد النبوي", "مسجد قباء", "المسجد الأقصى"],
+            c: 2,
+          },
+          {
+            q: "في أي شهر كانت غزوة بدر؟",
+            a: ["شوال", "ذو الحجة", "رمضان", "محرم"],
+            c: 2,
+          },
+          {
+            q: "كم سنة استمرت الدعوة في مكة؟",
+            a: ["١٠", "١٥", "١٣", "١٢"],
+            c: 2,
+          },
+        ],
+        علوم: [
+          {
+            q: "ما عدد عظام جسم الإنسان؟",
+            a: ["٢٠٦", "٢٠٠", "٢١٠", "١٩٥"],
+            c: 0,
+          },
+          {
+            q: "ما أكبر كوكب في المجموعة الشمسية؟",
+            a: ["زحل", "أورانوس", "المشتري", "نبتون"],
+            c: 2,
+          },
+          {
+            q: "ما سرعة الضوء تقريباً؟",
+            a: ["٢٠٠,٠٠٠ كم/ث", "٤٠٠,٠٠٠ كم/ث", "٣٠٠,٠٠٠ كم/ث", "٢٥٠,٠٠٠ كم/ث"],
+            c: 2,
+          },
+          {
+            q: "ما العنصر الأكثر وفرة في الهواء؟",
+            a: ["الأكسجين", "ثاني أكسيد الكربون", "النيتروجين", "الهيدروجين"],
+            c: 2,
+          },
+          {
+            q: "كم عدد كروموسومات الإنسان؟",
+            a: ["٤٤", "٤٨", "٤٦", "٤٢"],
+            c: 2,
+          },
+          {
+            q: "ما أكبر خلية في جسم الإنسان؟",
+            a: ["خلية الدم", "الخلية العصبية", "البويضة", "خلية الكبد"],
+            c: 2,
+          },
+          {
+            q: "ما درجة غليان الماء؟",
+            a: ["٩٠°", "١١٠°", "١٠٠°", "٩٥°"],
+            c: 2,
+          },
+          {
+            q: "ما أصغر كوكب في المجموعة الشمسية؟",
+            a: ["الزهرة", "المريخ", "عطارد", "أورانوس"],
+            c: 2,
+          },
+          {
+            q: "ما الغاز الذي تطرحه النباتات؟",
+            a: ["ثاني أكسيد الكربون", "النيتروجين", "الأكسجين", "الهيدروجين"],
+            c: 2,
+          },
+          {
+            q: "كم عدد أسنان الإنسان البالغ؟",
+            a: ["٢٨", "٣٠", "٣٢", "٣٤"],
+            c: 2,
+          },
+        ],
+        رياضيات: [
+          { q: "كم يساوي ١٥ × ١٥؟", a: ["٢٠٠", "٢١٥", "٢٢٥", "٢٣٥"], c: 2 },
+          { q: "ما جذر ١٤٤؟", a: ["١١", "١٣", "١٢", "١٤"], c: 2 },
+          {
+            q: "كم زاوية المثلث متساوي الأضلاع؟",
+            a: ["٤٥°", "٩٠°", "٦٠°", "٣٠°"],
+            c: 2,
+          },
+          { q: "كم يساوي 2^10؟", a: ["٥١٢", "٢٠٤٨", "١٠٢٤", "٢٥٦"], c: 2 },
+          {
+            q: "ما قيمة π تقريباً؟",
+            a: ["٣.١٤", "٣.٤١", "٣.١٢", "٣.١٦"],
+            c: 0,
+          },
+          { q: "كم يساوي ١٠٠٠ ÷ ٢٥؟", a: ["٣٥", "٤٥", "٤٠", "٣٠"], c: 2 },
+          {
+            q: "ما محيط الدائرة إذا كان نصف قطرها ٧؟",
+            a: ["٤٤", "٤٠", "٤٨", "٤٢"],
+            c: 0,
+          },
+          { q: "كم يساوي 8! ÷ 6!؟", a: ["٤٨", "٦٤", "٥٦", "٧٢"], c: 2 },
+          { q: "ما ناتج (3+4)²؟", a: ["٢٥", "٥٦", "٤٩", "٣٦"], c: 2 },
+          { q: "كم عدد أوجه المكعب؟", a: ["٨", "١٠", "٦", "١٢"], c: 2 },
+        ],
+      };
+
+      const DEFAULT_SUBJECTS_META = [
+        { key: "ديني", icon: "🕌", color: "#3b82f6" },
+        { key: "قرآني", icon: "📖", color: "#a78bfa" },
+        { key: "سيرة", icon: "🌙", color: "#f97316" },
+        { key: "علوم", icon: "🔬", color: "#22c55e" },
+        { key: "رياضيات", icon: "➗", color: "#f59e0b" },
+      ];
+
+      let QUESTIONS = null;
+      try { QUESTIONS = JSON.parse(localStorage.getItem("game_questions")); } catch (e) {}
+      if (!QUESTIONS) QUESTIONS = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+
+      let SUBJECTS_META = null;
+      try { SUBJECTS_META = JSON.parse(localStorage.getItem("game_subjects")); } catch (e) {}
+      if (!SUBJECTS_META) SUBJECTS_META = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS_META));
+
+      const WINS = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      // ==================== STATE ====================
+      let state = {
+        names: { X: "", O: "" },
+        turn: "X",
+        board: Array(9).fill(null),
+        currentQ: null,
+        currentSubject: null,
+        usedQPerSubject: {},
+      };
+
+      // ==================== UTILS ====================
+      function showScreen(id) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+      }
+
+      function currentSymbol() {
+        return state.turn === "X" ? "❌" : "⭕";
+      }
+      function otherTurn() {
+        return state.turn === "X" ? "O" : "X";
+      }
+      function teamName(t) {
+        return state.names[t];
+      }
+
+      function pickRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function checkWin(board) {
+        for (let [a, b, c] of WINS) {
+          if (board[a] && board[a] === board[b] && board[a] === board[c])
+            return { winner: board[a], cells: [a, b, c] };
+        }
+        return null;
+      }
+
+      function isFull(board) {
+        return board.every((c) => c !== null);
+      }
+
+      // ==================== SCREENS ====================
+      function startGame() {
+        const nx = document.getElementById("nameX").value.trim() || "الفريق X";
+        const no = document.getElementById("nameO").value.trim() || "الفريق O";
+        state = {
+          names: { X: nx, O: no },
+          turn: "X",
+          board: Array(9).fill(null),
+          currentQ: null,
+          currentSubject: null,
+          usedQPerSubject: {},
+        };
+        renderGameScreen();
+        showScreen("game");
+      }
+
+      function renderGameScreen() {
+        // header
+        document.getElementById("scoreNameX").textContent = state.names.X;
+        document.getElementById("scoreNameO").textContent = state.names.O;
+        const ti = document.getElementById("turnIndicator");
+        ti.className = "turn-indicator " + state.turn.toLowerCase();
+        document.getElementById("turnName").textContent =
+          teamName(state.turn) + " " + currentSymbol();
+
+        // board
+        const boardEl = document.getElementById("board");
+        boardEl.innerHTML = "";
+        state.board.forEach((_, i) => {
+          const cell = document.createElement("div");
+          cell.className =
+            "cell" +
+            (state.board[i] ? ` ${state.board[i].toLowerCase()}-cell` : "");
+          if (!state.board[i]) {
+            cell.classList.add("empty");
+          }
+          if (state.board[i]) {
+            const sp = document.createElement("span");
+            sp.className = "cell-symbol";
+            sp.textContent = state.board[i] === "X" ? "❌" : "⭕";
+            cell.appendChild(sp);
+          }
+          boardEl.appendChild(cell);
+        });
+
+        // subjects
+        const subEl = document.getElementById("subjects");
+        subEl.innerHTML = "";
+        SUBJECTS_META.forEach((s) => {
+          const card = document.createElement("div");
+          card.className = "subject-card";
+          card.style.borderColor = `${s.color}44`;
+          card.innerHTML = `<span class="icon">${s.icon}</span><span class="name">${s.key}</span>`;
+          card.onclick = () => selectSubject(s.key);
+          subEl.appendChild(card);
+        });
+      }
+
+      function selectSubject(key) {
+        // pick random unused question
+        const used = state.usedQPerSubject[key] || [];
+        const pool = QUESTIONS[key]
+          .map((_, i) => i)
+          .filter((i) => !used.includes(i));
+        let idx;
+        if (pool.length === 0) {
+          // reset used for this subject
+          state.usedQPerSubject[key] = [];
+          idx = Math.floor(Math.random() * QUESTIONS[key].length);
+        } else {
+          idx = pickRandom(pool);
+        }
+        if (!state.usedQPerSubject[key]) state.usedQPerSubject[key] = [];
+        state.usedQPerSubject[key].push(idx);
+        state.currentQ = QUESTIONS[key][idx];
+        state.currentSubject = key;
+        renderQuestion();
+        showScreen("question");
+      }
+
+      function renderQuestion() {
+        const meta = SUBJECTS_META.find((s) => s.key === state.currentSubject);
+        document.getElementById("qSubject").textContent =
+          `${meta.icon} ${state.currentSubject}`;
+        const qt = document.getElementById("qTeam");
+        qt.className = "q-team " + state.turn.toLowerCase();
+        qt.textContent = `دور: ${teamName(state.turn)} ${currentSymbol()}`;
+        document.getElementById("qText").textContent = state.currentQ.q;
+        const letters = ["أ", "ب", "ج", "د"];
+        const answersEl = document.getElementById("answers");
+        answersEl.innerHTML = "";
+        state.currentQ.a.forEach((ans, i) => {
+          const btn = document.createElement("button");
+          btn.className = "answer-btn";
+          btn.innerHTML = `<span class="letter">${letters[i]}</span>${ans}`;
+          btn.onclick = () => handleAnswer(i, btn, answersEl);
+          answersEl.appendChild(btn);
+        });
+      }
+
+      function handleAnswer(idx, btn, container) {
+        // disable all
+        container
+          .querySelectorAll("button")
+          .forEach((b) => (b.disabled = true));
+        const correct = idx === state.currentQ.c;
+        const letters = ["أ", "ب", "ج", "د"];
+        container.querySelectorAll("button").forEach((b, i) => {
+          if (i === state.currentQ.c) b.classList.add("correct");
+          else if (i === idx && !correct) b.classList.add("wrong");
+        });
+        const meta = SUBJECTS_META.find((s) => s.key === state.currentSubject);
+        if (correct) {
+          showFeedback(
+            true,
+            `إجابة صحيحة! 🎉`,
+            `${meta.icon} اختر خانة لوضع ${currentSymbol()}`,
+            () => {
+              renderPlaceScreen();
+              showScreen("place");
+            },
+          );
+        } else {
+          const correctAns = state.currentQ.a[state.currentQ.c];
+          showFeedback(
+            false,
+            `إجابة خاطئة! ❌`,
+            `الإجابة الصحيحة: ${letters[state.currentQ.c]}) ${correctAns}`,
+            () => {
+              state.turn = otherTurn();
+              renderGameScreen();
+              showScreen("game");
+            },
+          );
+        }
+      }
+
+      function showFeedback(correct, text, sub, cb) {
+        const fb = document.getElementById("feedback");
+        const card = document.getElementById("feedbackCard");
+        card.className = "feedback-card " + (correct ? "correct" : "wrong");
+        document.getElementById("feedbackIcon").textContent = correct
+          ? "✅"
+          : "❌";
+        document.getElementById("feedbackText").textContent = text;
+        document.getElementById("feedbackSub").textContent = sub;
+        fb.classList.add("show");
+        setTimeout(() => {
+          fb.classList.remove("show");
+          cb();
+        }, 2000);
+      }
+
+      function renderPlaceScreen() {
+        const sub = document.getElementById("placeSub");
+        sub.textContent = `${teamName(state.turn)} ${currentSymbol()} - اختر خانة فارغة`;
+        const pbEl = document.getElementById("placeBoard");
+        pbEl.innerHTML = "";
+        state.board.forEach((v, i) => {
+          const cell = document.createElement("div");
+          cell.className = "place-cell";
+          if (v) {
+            cell.classList.add(v.toLowerCase() + "-cell");
+            cell.textContent = v === "X" ? "❌" : "⭕";
+          } else {
+            cell.classList.add("empty");
+            cell.style.setProperty(
+              "--active-color",
+              state.turn === "X" ? "var(--x-color)" : "var(--o-color)",
+            );
+            cell.onclick = () => placeSymbol(i);
+          }
+          pbEl.appendChild(cell);
+        });
+      }
+
+      function placeSymbol(idx) {
+        state.board[idx] = state.turn;
+        const w = checkWin(state.board);
+        if (w) {
+          renderGameScreen();
+          highlightWin(w.cells);
+          setTimeout(() => showWin(w.winner), 600);
+          return;
+        }
+        if (isFull(state.board)) {
+          renderGameScreen();
+          setTimeout(() => showDraw(), 600);
+          return;
+        }
+        state.turn = otherTurn();
+        renderGameScreen();
+        showScreen("game");
+      }
+
+      function highlightWin(cells) {
+        showScreen("game");
+        const boardEl = document.getElementById("board");
+        cells.forEach((i) => {
+          boardEl.children[i].classList.add("win-cell");
+        });
+      }
+
+      function showWin(winner) {
+        launchConfetti(winner === "X" ? "#3b82f6" : "#f97316");
+        const wt = document.getElementById("winTitle");
+        wt.className = "win-title " + (winner === "X" ? "x" : "o");
+        wt.textContent = `🏆 ${teamName(winner)} يفوز!`;
+        document.getElementById("winEmoji").textContent = "🎉";
+        document.getElementById("winSub").textContent =
+          `أحسنت! لقد أكملت ثلاثة في صف!`;
+        showScreen("winscreen");
+      }
+
+      function showDraw() {
+        const wt = document.getElementById("winTitle");
+        wt.className = "win-title draw";
+        wt.textContent = "🤝 تعادل!";
+        document.getElementById("winEmoji").textContent = "🎊";
+        document.getElementById("winSub").textContent =
+          "اللوحة امتلأت دون فائز. لعبة رائعة!";
+        showScreen("winscreen");
+      }
+
+      function launchConfetti(color) {
+        const colors = [color, "#ffffff", "#fbbf24", "#a78bfa", "#34d399"];
+        for (let i = 0; i < 60; i++) {
+          setTimeout(() => {
+            const p = document.createElement("div");
+            p.className = "confetti-piece";
+            p.style.left = Math.random() * 100 + "vw";
+            p.style.background =
+              colors[Math.floor(Math.random() * colors.length)];
+            p.style.animationDuration = 2 + Math.random() * 2 + "s";
+            p.style.animationDelay = "0s";
+            p.style.width = 6 + Math.random() * 8 + "px";
+            p.style.height = 6 + Math.random() * 8 + "px";
+            p.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 4000);
+          }, i * 50);
+        }
+      }
+
+      // ==================== ADMIN LOGIC ====================
+      let adminState = {
+        questions: null,
+        subjectsMeta: null,
+        currentSubject: null
+      };
+
+      function adminLogin() {
+        const pass = document.getElementById("adminPassword").value;
+        if (pass === "admin1234") {
+          document.getElementById("adminPassword").value = "";
+          // clone current data for editing
+          adminState.questions = JSON.parse(JSON.stringify(QUESTIONS));
+          adminState.subjectsMeta = JSON.parse(JSON.stringify(SUBJECTS_META));
+          adminState.currentSubject = null;
+          renderAdminPanel();
+          showScreen("admin-panel");
+        } else {
+          alert("كلمة المرور غير صحيحة");
+        }
+      }
+
+      function renderAdminPanel() {
+        const subList = document.getElementById("adminSubjectsList");
+        subList.innerHTML = "";
+        adminState.subjectsMeta.forEach(sub => {
+          const div = document.createElement("div");
+          div.className = "subject-item" + (adminState.currentSubject === sub.key ? " active" : "");
+          div.innerHTML = `
+            <span onclick="adminSelectSubject('${sub.key}')" style="flex:1;">${sub.icon} ${sub.key}</span>
+            <button class="admin-btn danger" style="padding: 0.1rem 0.4rem; font-size:0.8rem;" onclick="adminDeleteSubject('${sub.key}')" title="حذف الموضوع">🗑️</button>
+          `;
+          subList.appendChild(div);
+        });
+
+        const qList = document.getElementById("adminQuestionsList");
+        const title = document.getElementById("adminCurrentSubjectTitle");
+        const addBtn = document.getElementById("adminAddQuestionBtn");
+
+        if (!adminState.currentSubject) {
+          title.textContent = "الأسئلة";
+          addBtn.style.display = "none";
+          qList.innerHTML = `<div style="color: var(--muted); text-align: center; padding: 2rem;">اختر موضوعاً لعرض الأسئلة</div>`;
+          return;
+        }
+
+        title.textContent = `أسئلة: ${adminState.currentSubject}`;
+        addBtn.style.display = "inline-block";
+        qList.innerHTML = "";
+
+        const qs = adminState.questions[adminState.currentSubject] || [];
+        if (qs.length === 0) {
+          qList.innerHTML = `<div style="color: var(--muted); text-align: center; padding: 1rem;">لا توجد أسئلة</div>`;
+        }
+
+        qs.forEach((q, i) => {
+          const div = document.createElement("div");
+          div.className = "question-item";
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div class="question-text">${q.q}</div>
+              <div style="display:flex; gap:0.3rem;">
+                <button class="admin-btn secondary" style="padding: 0.2rem 0.5rem; font-size:0.8rem;" onclick="adminEditQuestion(${i})" title="تعديل">✏️</button>
+                <button class="admin-btn danger" style="padding: 0.2rem 0.5rem; font-size:0.8rem;" onclick="adminDeleteQuestion(${i})" title="حذف">🗑️</button>
+              </div>
+            </div>
+            <div class="question-options">
+              ${q.a.map((opt, optIdx) => `<div class="q-opt ${optIdx === q.c ? 'correct' : ''}">${optIdx === q.c ? '✅' : '⬜'} ${opt}</div>`).join('')}
+            </div>
+          `;
+          qList.appendChild(div);
+        });
+      }
+
+      function adminSelectSubject(key) {
+        adminState.currentSubject = key;
+        renderAdminPanel();
+      }
+
+      function adminAddSubject() {
+        const name = prompt("أدخل اسم الموضوع الجديد:");
+        if (!name || name.trim() === "") return;
+        if (adminState.subjectsMeta.find(s => s.key === name)) {
+          alert("الموضوع موجود مسبقاً!");
+          return;
+        }
+        let emoji = prompt("أدخل رمزاً تعبيرياً (Emoji) للموضوع:");
+        if (!emoji) emoji = "📌";
+        let color = prompt("أدخل لوناً بصيغة HEX (مثال: #3b82f6):");
+        if (!color || !color.startsWith("#")) color = "#888888";
+        
+        adminState.subjectsMeta.push({ key: name, icon: emoji, color: color });
+        adminState.questions[name] = [];
+        adminSelectSubject(name);
+      }
+
+      function adminDeleteSubject(key) {
+        if (!confirm(`هل أنت متأكد من حذف الموضوع '${key}' وجميع أسئلته؟`)) return;
+        adminState.subjectsMeta = adminState.subjectsMeta.filter(s => s.key !== key);
+        delete adminState.questions[key];
+        if (adminState.currentSubject === key) adminState.currentSubject = null;
+        renderAdminPanel();
+      }
+
+      function adminDeleteQuestion(idx) {
+        if (!confirm("هل أنت متأكد من حذف هذا السؤال؟")) return;
+        adminState.questions[adminState.currentSubject].splice(idx, 1);
+        renderAdminPanel();
+      }
+
+      function adminAddQuestion() {
+        document.getElementById("adminQModalTitle").textContent = "إضافة سؤال جديد";
+        document.getElementById("adminQModalIndex").value = "-1";
+        document.getElementById("adminQText").value = "";
+        for (let i = 0; i < 4; i++) document.getElementById("adminQOpt" + i).value = "";
+        document.querySelector('input[name="adminQCorrect"][value="0"]').checked = true;
+        document.getElementById("admin-q-modal").style.display = "flex";
+      }
+
+      function adminEditQuestion(idx) {
+        const q = adminState.questions[adminState.currentSubject][idx];
+        document.getElementById("adminQModalTitle").textContent = "تعديل سؤال";
+        document.getElementById("adminQModalIndex").value = idx;
+        document.getElementById("adminQText").value = q.q;
+        for (let i = 0; i < 4; i++) document.getElementById("adminQOpt" + i).value = q.a[i];
+        document.querySelector(`input[name="adminQCorrect"][value="${q.c}"]`).checked = true;
+        document.getElementById("admin-q-modal").style.display = "flex";
+      }
+
+      function closeAdminQModal() {
+        document.getElementById("admin-q-modal").style.display = "none";
+      }
+
+      function saveAdminQModal() {
+        const text = document.getElementById("adminQText").value.trim();
+        const a0 = document.getElementById("adminQOpt0").value.trim();
+        const a1 = document.getElementById("adminQOpt1").value.trim();
+        const a2 = document.getElementById("adminQOpt2").value.trim();
+        const a3 = document.getElementById("adminQOpt3").value.trim();
+        const correctInput = document.querySelector('input[name="adminQCorrect"]:checked');
+        const c = correctInput ? parseInt(correctInput.value) : 0;
+
+        if (!text || !a0 || !a1 || !a2 || !a3) {
+          alert("الرجاء تعبئة جميع الحقول!");
+          return;
+        }
+
+        const newQ = { q: text, a: [a0, a1, a2, a3], c: c };
+        const idx = parseInt(document.getElementById("adminQModalIndex").value);
+
+        if (idx === -1) {
+          adminState.questions[adminState.currentSubject].push(newQ);
+        } else {
+          adminState.questions[adminState.currentSubject][idx] = newQ;
+        }
+
+        closeAdminQModal();
+        renderAdminPanel();
+      }
+
+      function saveAdminChanges() {
+        if (!confirm("هل أنت متأكد من حفظ التغييرات وتطبيقها على اللعبة؟ سيتم تحديث اللعبة الآن.")) return;
+        QUESTIONS = JSON.parse(JSON.stringify(adminState.questions));
+        SUBJECTS_META = JSON.parse(JSON.stringify(adminState.subjectsMeta));
+        
+        localStorage.setItem("game_questions", JSON.stringify(QUESTIONS));
+        localStorage.setItem("game_subjects", JSON.stringify(SUBJECTS_META));
+        
+        alert("تم الحفظ بنجاح!");
+        showScreen("welcome");
+        // re-render the subjects if in welcome
+        // In the existing code, subjects are rendered when startGame() is called
+        // Since we are returning to "welcome", next time they start game, it will reflect it.
+        // Let's also refresh page if it's easier, but showScreen is fine.
+      }
+
+      function cancelAdminChanges() {
+        if (!confirm("هل أنت متأكد من إغلاق لوحة التحكم دون حفظ التغييرات؟")) return;
+        showScreen("welcome");
+      }
+    </script>
+  </body>
+</html>
